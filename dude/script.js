@@ -5,8 +5,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     const toggleActiveElement = (allElements) => (activeElement) => {
-        if (allElements?.length && activeElement !== undefined) {
-            allElements.forEach((el) => {
+        if (activeElement !== undefined) {
+            [...allElements].forEach((el) => {
                 if (el.classList.contains('active')) {
                     el.classList.remove('active');
                 }
@@ -32,25 +32,71 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     //hero slider
-    let currSlide = 0;
     const heroesContainer = document.querySelector('.hero-slider__list'),
-        heroes = document.querySelectorAll('.hero-slider__item'),
+        sliderWrapper = document.querySelector('.hero-slider'),
+        heroes = document.getElementsByClassName('hero-slider__item'),
         heroArrowNext = document.querySelector('.hero-slider__btn_next'),
         heroArrowPrev = document.querySelector('.hero-slider__btn_prev');
 
     const toggleActiveHero = toggleActiveElement(heroes);
 
-    toggleActiveHero(0);
+    heroesContainer.style.transform = `translateX(-${100 / heroes.length}%)`;
+    toggleActiveHero(1);
 
-    heroArrowNext.addEventListener('click', () => {
-        currSlide === heroes.length - 1 ? (currSlide = 0) : currSlide++;
-        toggleActiveHero(currSlide);
-        heroesContainer.style.transform = `translateX(-${(currSlide * 100) / 3}%)`;
+    const moveSlide = (direction) => {
+        if (direction === 'next') {
+            heroesContainer.style.transition = 'transform 0.2s ease';
+            heroesContainer.style.transform = `translateX(-${100 * 2 / heroes.length}%)`;
+
+            setTimeout(() => {
+                heroesContainer.appendChild(heroes[0]); 
+                heroesContainer.style.transition = 'none';
+                heroesContainer.style.transform = `translateX(-${100 / heroes.length}%)`;
+                toggleActiveHero(1);
+            }, 200);
+        }
+        if (direction === 'prev') {
+            heroesContainer.style.transition = 'transform 0.2s ease';
+            heroesContainer.style.transform = 'translateX(0%)';
+             
+            setTimeout(() => {
+                heroesContainer.insertBefore(heroes[heroes.length - 1], heroes[0]);
+                heroesContainer.style.transition = 'none';
+                heroesContainer.style.transform = `translateX(-${(100) / heroes.length}%)`;
+                toggleActiveHero(1);
+            }, 200);
+        }
+    };
+
+    heroArrowNext.addEventListener('click', () => moveSlide('next'));
+    heroArrowPrev.addEventListener('click', () => moveSlide('prev'));
+
+    let startX, distX;
+    const minDistance = 50;
+
+    sliderWrapper.addEventListener('touchstart', function (e) {
+        const touchObj = e.changedTouches[0];
+        startX = touchObj.pageX;
     });
 
-    heroArrowPrev.addEventListener('click', () => {
-        currSlide === 0 ? currSlide = heroes.length - 1 : currSlide--;
-        toggleActiveHero(currSlide);
-        heroesContainer.style.transform = `translateX(-${(currSlide * 100) / 3}%)`;
+    sliderWrapper.addEventListener('touchend', function (e) {
+        const touchObj = e.changedTouches[0];
+        distX = touchObj.pageX - startX;
+        
+        if (Math.abs(distX) >= minDistance) {
+            distX < 0 ? moveSlide('next') : moveSlide('prev');
+        }
     });
+
+    sliderWrapper.addEventListener('mousedown', function (e) {
+        startX = e.pageX;
+    });
+
+    sliderWrapper.addEventListener('mouseup', function (e) {
+        distX = e.pageX - startX;
+        if (Math.abs(distX) >= minDistance) {
+            distX < 0 ? moveSlide('next') : moveSlide('prev');
+        } 
+    });
+
 })
